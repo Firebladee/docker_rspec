@@ -1,0 +1,143 @@
+---
+groups:
+  - name: master
+    jobs:
+      - hadolint
+      - rubocop
+      - rspec
+      - build_test
+      - testinfra
+      - docker_build
+
+resources:
+  - name: resource_git
+    type: git
+    icon: github
+    source:
+      uri: https://github.com/Firebladee/docker_rspec.git
+
+  - name: docker_temp
+    type: docker-image
+    icon: docker
+    source:
+      email: ((docker_hub_email))
+      username: ((docker_hub_username))
+      password: ((docker_hub_password))
+      repository: ((docker_hub_username))/testing
+
+  - name: docker_build
+    type: docker-image
+    icon: docker
+    source:
+      repository: ((docker_hub_username))/docker_rspec
+
+jobs:
+  - name: hadolint
+    public: true
+    plan:
+      - get: resource_git
+        trigger: true
+      - task: validate
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: hadolint/hadolint
+          inputs:
+            - name: resource_git
+          run:
+            path: hadolint
+            args:
+              - resource_git/Dockerfile
+
+  - name: rubocop
+    public: true
+    plan:
+      - get: resource_git
+        trigger: true
+      - task: rubocop
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: ruby
+          inputs:
+            - name: resource_git
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                cd resource_git
+                gem install rubocop
+                rubocop
+
+  - name: rspec
+    public: true
+    plan:
+      - get: resource_git
+        trigger: true
+        passed:
+          - rubocop
+      - task: rspec
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: fireblade/docker_rspec
+          inputs:
+            - name: resource_git
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                source /docker-lib.sh
+                start_docker
+
+                rake
+        
+  - name: build_test
+    public: true
+    plan:
+      - get: resource_git
+        passed:
+          - hadolint
+        trigger: true
+      - put: docker_temp
+        params:
+          build: resource_git/systemd
+
+  - name: testinfra
+    public: true
+    plan:
+      - get: resource_git
+        passed:
+          - build_test
+          - rspec
+        trigger: true
+      - task: hello
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: centos
+          run:
+            path: echo
+            args: ["Testinfra"]
+
+  - name: docker_build
+    public: true
+    plan:
+      - get: resource_git
+        passed:
+          - testinfra
+        trigger: true
+      - put: docker_build
+        params:
+          build: resource_git
