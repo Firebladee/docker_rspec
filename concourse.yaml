@@ -34,11 +34,19 @@ resources:
       username: ((docker_hub_username))
       password: ((docker_hub_password))
 
+  - name: docker_libvirt
+    type: registry-image
+    icon: docker
+    source:
+      repository: ((docker_hub_username))/docker_libvirt
+
 jobs:
   - name: hadolint
     public: true
     plan:
       - get: resource_git
+        trigger: true
+      - get: docker_libvirt
         trigger: true
       - task: validate
         config:
@@ -61,6 +69,8 @@ jobs:
     public: true
     plan:
       - get: resource_git
+        trigger: true
+      - get: docker_libvirt
         trigger: true
       - task: rubocop
         config:
