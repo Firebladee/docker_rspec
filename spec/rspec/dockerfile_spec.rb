@@ -8,5 +8,4 @@ describe 'Dockerfile' do
   set :os, family: :redhat
   set :backend, :docker
   set :docker_image, image.id
-
 end

@@ -15,6 +15,7 @@ resources:
     icon: github
     source:
       uri: https://github.com/Firebladee/docker_rspec.git
+      branch: testing
 
   - name: docker_temp
     type: docker-image
@@ -43,13 +44,15 @@ jobs:
           image_resource:
             type: registry-image
             source:
-              repository: hadolint/hadolint
+              repository: hadolint/hadolint:latest-debian
           inputs:
             - name: resource_git
           run:
-            path: hadolint
+            path: sh
             args:
-              - resource_git/Dockerfile
+              - -exc
+              - |
+                hadolint --config hadolint.yaml resource_git/Dockerfile
 
   - name: rubocop
     public: true
