@@ -1,3 +1,0 @@
-Naming/FileName:
-  Exclude:
-    - spec/rspec/Dockerfile_spec.rb
