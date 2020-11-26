@@ -8,6 +8,9 @@ groups:
       - build_test
       - testinfra
       - docker_build
+      - major
+      - minor
+      - patch
 
 resources:
   - name: resource_git
@@ -38,6 +41,16 @@ resources:
     icon: docker
     source:
       repository: ((docker_hub_username))/libvirt
+
+  - name: version
+    type: semver
+    source:
+      driver: git
+      uri: git@github.com:Firebladee/docker_rspec.git
+      branch: version
+      file: version
+      initial_version: 0.0.1
+
 
 jobs:
   - name: hadolint
@@ -158,3 +171,27 @@ jobs:
       - put: docker_build
         params:
           build: resource_git
+      - put: version
+        params:
+          bump: patch
+
+  - name: major
+    public: true
+    plan:
+      - put: version
+        params:
+          bump: major
+
+  - name: minor
+    public: true
+    plan:
+      - put: version
+        params:
+          bump: minor
+
+  - name: patch
+    public: true
+    plan:
+      - put: version
+        params:
+          bump: patch
