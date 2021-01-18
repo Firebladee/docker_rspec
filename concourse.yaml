@@ -12,19 +12,13 @@ groups:
       - minor
       - patch
 
-  - name: testing
+  - name: ((branch))
     jobs:
-      - hadolint-branch
-      - rubocop-branch
-      - rspec-branch
-      - build-test-branch
-      - testinfra-branch
-
-resource_types:
-  - name: git-multibranch
-    type: docker-image
-    source:
-      repository: ((nexus_ip)):((nexus_docker_port))/cfcommunity/git-multibranch-resource
+      - hadolint-dev
+      - rubocop-dev
+      - rspec-dev
+      - build-test-dev
+      - testinfra-dev
 
 resources:
   - name: resource-git
@@ -34,21 +28,20 @@ resources:
       uri: https://github.com/Firebladee/docker_rspec.git
       branch: master
 
-  - name: resource-git-branch
-    type: git-multibranch
+  - name: resource-git-dev
+    type: git
+    icon: github
     source:
       uri: https://github.com/Firebladee/docker_rspec.git
-      branches: '.*'
-      ignore_branches:
-        - master
+      branch: ((branch))
 
   - name: docker-temp
     type: docker-image
     icon: docker
     source:
       repository: ((nexus_ip)):((nexus_docker_port))/testing
-      username: admin
-      password: admin123
+      username: ((nexus_username))
+      password: ((nexus_password))
       insecure_registries:
         - http://((nexus_ip)):((nexus_docker_port))
 
@@ -57,6 +50,10 @@ resources:
     icon: docker
     source:
       repository: ((nexus_ip)):((nexus_docker_port))/fireblade/rspec
+      username: ((nexus_username))
+      password: ((nexus_password))
+      insecure_registries:
+        - http://((nexus_ip)):((nexus_docker_port))
 
   - name: docker-libvirt
     type: registry-image
@@ -72,6 +69,7 @@ resources:
       branch: version
       file: version
       initial_version: 0.0.1
+      private_key: ((private_key))
 
 jobs:
   - name: hadolint
@@ -176,10 +174,6 @@ jobs:
             type: docker-image
             source:
               repository: ((nexus_ip)):((nexus_docker_group_port))/testing
-              username: admin
-              password: admin123
-              insecure_registries:
-                - http://((nexus_ip)):((nexus_docker_group_port))
           run:
             path: echo
             args: ["Testinfra"]
@@ -198,10 +192,10 @@ jobs:
         params:
           bump: patch
 
-  - name: hadolint-branch
+  - name: hadolint-dev
     public: true
     plan:
-      - get: resource-git-branch
+      - get: resource-git-dev
         trigger: true
       - get: docker-libvirt
         trigger: true
@@ -214,18 +208,18 @@ jobs:
               repository: ((nexus_ip)):((nexus_docker_group_port))/hadolint/hadolint
               tag: latest-debian
           inputs:
-            - name: resource-git-branch
+            - name: resource-git-dev
           run:
             path: sh
             args:
               - -exc
               - |
-                hadolint --config resource-git-branch/.hadolint.yaml resource-git/Dockerfile
+                hadolint --config resource-git-dev/.hadolint.yaml resource-git-dev/Dockerfile
 
-  - name: rubocop-branch
+  - name: rubocop-dev
     public: true
     plan:
-      - get: resource-git-branch
+      - get: resource-git-dev
         trigger: true
       - get: docker-libvirt
         trigger: true
@@ -237,23 +231,23 @@ jobs:
             source:
               repository: ((nexus_ip)):((nexus_docker_group_port))/ruby
           inputs:
-            - name: resource-git-branch
+            - name: resource-git-dev
           run:
             path: sh
             args:
               - -exc
               - |
-                cd resource-git-branch
+                cd resource-git-dev
                 gem install rubocop
                 rubocop
 
-  - name: rspec-branch
+  - name: rspec-dev
     public: true
     plan:
-      - get: resource-git-branch
+      - get: resource-git-dev
         trigger: true
         passed:
-          - rubocop-branch
+          - rubocop-dev
       - task: rspec
         privileged: true
         config:
@@ -263,7 +257,7 @@ jobs:
             source:
               repository: ((nexus_ip)):((nexus_docker_group_port))/fireblade/rspec
           inputs:
-            - name: resource-git-branch
+            - name: resource-git-dev
           run:
             path: sh
             args:
@@ -271,27 +265,27 @@ jobs:
               - |
                 source /docker-lib.sh
                 start_docker
-                cd resource-git-branch
+                cd resource-git-dev
                 rake
 
-  - name: build-test-branch
+  - name: build-test-dev
     public: true
     plan:
-      - get: resource-git-branch
+      - get: resource-git-dev
         passed:
-          - hadolint-branch
+          - hadolint-dev
         trigger: true
       - put: docker-temp
         params:
-          build: resource-git-branch/
+          build: resource-git-dev/
 
-  - name: testinfra-branch
+  - name: testinfra-dev
     public: true
     plan:
-      - get: resource-git-branch
+      - get: resource-git-dev
         passed:
-          - build-test-branch
-          - rspec-branch
+          - build-test-dev
+          - rspec-dev
         trigger: true
       - task: hello
         config:
@@ -300,10 +294,6 @@ jobs:
             type: docker-image
             source:
               repository: ((nexus_ip)):((nexus_docker_group_port))/testing
-              username: admin
-              password: admin123
-              insecure_registries:
-                - http://((nexus_ip)):((nexus_docker_group_port))
           run:
             path: echo
             args: ["Testinfra"]
