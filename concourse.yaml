@@ -4,6 +4,7 @@ groups:
     jobs:
       - hadolint
       - rubocop
+      - shellcheck
       - rspec
       - build-test
       - testinfra
@@ -16,6 +17,7 @@ groups:
     jobs:
       - hadolint-dev
       - rubocop-dev
+      - shellcheck-dev
       - rspec-dev
       - build-test-dev
       - testinfra-dev
@@ -54,6 +56,14 @@ resources:
       password: ((nexus_password))
       insecure_registries:
         - http://((nexus_ip)):((nexus_docker_port))
+
+  - name: docker-hub
+    type: docker-image
+    icon: docker
+    source:
+      repository: fireblade/rspec
+      username: ((docker_hub_username))
+      password: ((docker_hub_password))
 
   - name: docker-libvirt
     type: registry-image
@@ -121,6 +131,27 @@ jobs:
                 gem install rubocop
                 rubocop
 
+  - name: shellcheck
+    public: true
+    plan:
+      - get: resource-git
+        trigger: true
+      - task: shellcheck
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: koalaman/shellcheck-alpine
+          inputs:
+            - name: resource-git
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                shellcheck resource-git/*.sh
+
   - name: rspec
     public: true
     plan:
@@ -128,6 +159,7 @@ jobs:
         trigger: true
         passed:
           - rubocop
+          - shellcheck
       - task: rspec
         privileged: true
         config:
@@ -185,12 +217,22 @@ jobs:
         passed:
           - testinfra
         trigger: true
+      - get: version
+        params:
+          bump: patch
       - put: docker-build
         params:
           build: resource-git
+          tag_file: version/version
+          tag_as_latest: true
+      - put: docker-hub
+        params:
+          build: resource-git
+          tag_file: version/version
+          tag_as_latest: true
       - put: version
         params:
-          bump: patch
+          file: version/version
 
   - name: hadolint-dev
     public: true
@@ -241,6 +283,27 @@ jobs:
                 gem install rubocop
                 rubocop
 
+  - name: shellcheck-dev
+    public: true
+    plan:
+      - get: resource-git-dev
+        trigger: true
+      - task: shellcheck
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: koalaman/shellcheck-alpine
+          inputs:
+            - name: resource-git-dev
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                shellcheck resource-git-dev/*.sh
+
   - name: rspec-dev
     public: true
     plan:
@@ -248,6 +311,7 @@ jobs:
         trigger: true
         passed:
           - rubocop-dev
+          - shellcheck-dev
       - task: rspec
         privileged: true
         config:
