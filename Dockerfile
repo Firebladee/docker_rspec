@@ -6,7 +6,7 @@ RUN apk add ruby-dev make gcc libc-dev ruby-full --no-cache && \
     rm -rf /var/cache/apk/* && \
     gem install bundler rake -N && gem cleanup
 
-WORKDIR rspec
+WORKDIR /rspec
 
 COPY Gemfile Gemfile
 RUN bundle
