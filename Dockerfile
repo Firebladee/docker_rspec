@@ -1,4 +1,5 @@
-FROM amidos/dcind:2.1.0
+#FROM amidos/dcind:2.1.0
+FROM fireblade/dcind
 
 RUN source /docker-lib.sh
 
