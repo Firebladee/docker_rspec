@@ -38,4 +38,4 @@ pipeline:
                     command: echo "Hello"
                   description: test
   delegateSelectors:
-    - helm-delegate
+    - docker-delegate
