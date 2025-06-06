@@ -21,22 +21,8 @@ pipeline:
           caching:
             enabled: true
             override: true
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Docker
-            spec: {}
           execution:
             steps:
-              - step:
-                  type: Run
-                  name: Run_1
-                  identifier: Run_1
-                  spec:
-                    shell: Bash
-                    command: echo "Hello"
-                  description: test
               - parallel:
                   - step:
                       type: Run
@@ -67,18 +53,26 @@ pipeline:
                         image: koalaman/shellcheck-alpine
                         shell: Sh
                         command: shellcheck *.sh
-                  - step:
-                      type: Run
-                      name: rspec
-                      identifier: rspec
-                      spec:
-                        connectorRef: Dockerhub
-                        image: fireblade/rspec
-                        shell: Sh
-                        command: |-
-                          source /docker-lib.sh
-                          start_docker
-                          rake
-                        privileged: true
+              - step:
+                  type: Run
+                  name: rspec
+                  identifier: rspec
+                  spec:
+                    connectorRef: Dockerhub
+                    image: fireblade/rspec
+                    shell: Sh
+                    command: |-
+                      source /docker-lib.sh
+                      start_docker
+                      rake
+                    privileged: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: minikube
+              namespace: testing
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
   delegateSelectors:
     - docker-delegate
