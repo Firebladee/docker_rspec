@@ -1,0 +1,90 @@
+pipeline:
+  name: Docker_rspec
+  identifier: Docker_rspec
+  projectIdentifier: default_project
+  orgIdentifier: default
+  tags: {}
+  properties:
+    ci:
+      codebase:
+        connectorRef: Fireblade
+        repoName: docker_rspec
+        build: <+input>
+  stages:
+    - stage:
+        name: Build
+        identifier: Build
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          caching:
+            enabled: true
+            override: true
+          execution:
+            steps:
+              - parallel:
+                  - step:
+                      type: Run
+                      name: hadolint
+                      identifier: hadolint
+                      spec:
+                        connectorRef: Dockerhub
+                        image: hadolint/hadolint:latest-debian
+                        shell: Sh
+                        command: hadolint --config .hadolint.yaml Dockerfile
+                      failureStrategies:
+                        - onFailure:
+                            errors:
+                              - AllErrors
+                            action:
+                              type: Ignore
+                  - step:
+                      type: Run
+                      name: Rubocop
+                      identifier: Rubocop
+                      spec:
+                        connectorRef: Dockerhub
+                        image: library/ruby
+                        shell: Sh
+                        command: |-
+                          gem install rubocop
+                          rubocop
+                      failureStrategies:
+                        - onFailure:
+                            errors:
+                              - AllErrors
+                            action:
+                              type: Ignore
+                  - step:
+                      type: Run
+                      name: Shellcheck
+                      identifier: Shellcheck
+                      spec:
+                        connectorRef: Dockerhub
+                        image: koalaman/shellcheck-alpine
+                        shell: Sh
+                        command: shellcheck *.sh
+              - step:
+                  type: Run
+                  name: rspec
+                  identifier: rspec
+                  spec:
+                    connectorRef: Dockerhub
+                    image: fireblade/rspec
+                    shell: Sh
+                    command: |-
+                      source /docker-lib.sh
+                      start_docker
+                      rake
+                    privileged: true
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: minikube
+              namespace: testing
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+  delegateSelectors:
+    - helm-delegate
