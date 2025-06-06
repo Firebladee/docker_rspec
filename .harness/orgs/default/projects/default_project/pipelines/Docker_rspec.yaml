@@ -43,7 +43,7 @@ pipeline:
                   identifier: hadolint
                   spec:
                     connectorRef: Dockerhub
-                    image: hadolint/hadolint
+                    image: hadolint/hadolint:latest-debian
                     shell: Sh
                     command: hadolint --config resource-git/.hadolint.yaml resource-git/Dockerfile
   delegateSelectors:
