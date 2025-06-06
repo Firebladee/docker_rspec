@@ -58,5 +58,14 @@ pipeline:
                         command: |-
                           gem install rubocop
                           rubocop
+                  - step:
+                      type: Run
+                      name: Shellcheck
+                      identifier: Shellcheck
+                      spec:
+                        connectorRef: Dockerhub
+                        image: koalaman/shellcheck-alpine
+                        shell: Sh
+                        command: shellcheck *.sh
   delegateSelectors:
     - docker-delegate
