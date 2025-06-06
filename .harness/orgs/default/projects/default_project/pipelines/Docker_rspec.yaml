@@ -67,5 +67,17 @@ pipeline:
                         image: koalaman/shellcheck-alpine
                         shell: Sh
                         command: shellcheck *.sh
+                  - step:
+                      type: Run
+                      name: rspec
+                      identifier: rspec
+                      spec:
+                        connectorRef: Dockerhub
+                        image: fireblade/rspec
+                        shell: Sh
+                        command: |-
+                          source /docker-lib.sh
+                          start_docker
+                          rake
   delegateSelectors:
     - docker-delegate
