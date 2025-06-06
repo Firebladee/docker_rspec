@@ -37,5 +37,14 @@ pipeline:
                     shell: Bash
                     command: echo "Hello"
                   description: test
+              - step:
+                  type: Run
+                  name: hadolint
+                  identifier: hadolint
+                  spec:
+                    connectorRef: Dockerhub
+                    image: hadolint/hadolint
+                    shell: Sh
+                    command: hadolint --config resource-git/.hadolint.yaml resource-git/Dockerfile
   delegateSelectors:
     - docker-delegate
