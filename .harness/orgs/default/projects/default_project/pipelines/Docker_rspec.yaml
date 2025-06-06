@@ -33,6 +33,12 @@ pipeline:
                         image: hadolint/hadolint:latest-debian
                         shell: Sh
                         command: hadolint --config .hadolint.yaml Dockerfile
+                      failureStrategies:
+                        - onFailure:
+                            errors:
+                              - AllErrors
+                            action:
+                              type: MarkAsFailure
                   - step:
                       type: Run
                       name: Rubocop
@@ -44,6 +50,12 @@ pipeline:
                         command: |-
                           gem install rubocop
                           rubocop
+                      failureStrategies:
+                        - onFailure:
+                            errors:
+                              - AllErrors
+                            action:
+                              type: MarkAsFailure
                   - step:
                       type: Run
                       name: Shellcheck
