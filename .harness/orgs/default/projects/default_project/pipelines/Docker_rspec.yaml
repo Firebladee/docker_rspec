@@ -45,6 +45,6 @@ pipeline:
                     connectorRef: Dockerhub
                     image: hadolint/hadolint:latest-debian
                     shell: Sh
-                    command: hadolint --config .hadolint.yaml resource-git/Dockerfile
+                    command: hadolint --config .hadolint.yaml Dockerfile
   delegateSelectors:
     - docker-delegate
