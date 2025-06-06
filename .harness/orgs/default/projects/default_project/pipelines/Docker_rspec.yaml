@@ -45,8 +45,6 @@ pipeline:
                     connectorRef: Dockerhub
                     image: hadolint/hadolint
                     shell: Sh
-                    command: |-
-                      -exc
-                      hadolint --config resource-git/.hadolint.yaml resource-git/Dockerfile
+                    command: hadolint --config resource-git/.hadolint.yaml resource-git/Dockerfile
   delegateSelectors:
     - docker-delegate
