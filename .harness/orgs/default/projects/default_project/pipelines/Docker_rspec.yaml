@@ -79,5 +79,6 @@ pipeline:
                           source /docker-lib.sh
                           start_docker
                           rake
+                        runAsUser: "0"
   delegateSelectors:
     - docker-delegate
