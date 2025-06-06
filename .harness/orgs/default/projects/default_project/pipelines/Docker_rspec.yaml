@@ -37,14 +37,26 @@ pipeline:
                     shell: Bash
                     command: echo "Hello"
                   description: test
-              - step:
-                  type: Run
-                  name: hadolint
-                  identifier: hadolint
-                  spec:
-                    connectorRef: Dockerhub
-                    image: hadolint/hadolint:latest-debian
-                    shell: Sh
-                    command: hadolint --config .hadolint.yaml Dockerfile
+              - parallel:
+                  - step:
+                      type: Run
+                      name: hadolint
+                      identifier: hadolint
+                      spec:
+                        connectorRef: Dockerhub
+                        image: hadolint/hadolint:latest-debian
+                        shell: Sh
+                        command: hadolint --config .hadolint.yaml Dockerfile
+                  - step:
+                      type: Run
+                      name: Rubocop
+                      identifier: Rubocop
+                      spec:
+                        connectorRef: Dockerhub
+                        image: library/ruby
+                        shell: Sh
+                        command: |-
+                          gem install rubocop
+                          rubocop
   delegateSelectors:
     - docker-delegate
