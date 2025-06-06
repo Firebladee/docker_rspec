@@ -75,4 +75,4 @@ pipeline:
               nodeSelector: {}
               os: Linux
   delegateSelectors:
-    - docker-delegate
+    - helm-delegate
